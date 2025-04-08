@@ -1,0 +1,15 @@
+streamlit
+mysql-connector-python
+langchain
+google-generativeai
+ollama
+unstructured
+langchain_community
+langchain_ollama
+langchain_unstructured
+pymupdf
+pypdf2
+ollama
+numpy
+pdfminer.six
+
