@@ -1,128 +1,3 @@
-# import os
-# from flask import Flask
-# import re
-# import json
-# import openai
-# import logging
-# from dotenv import load_dotenv
-# from datetime import datetime
-# import traceback
-
-
-# import mysql.connector
-# from mysql.connector import Error
-# from flask import Flask, request, jsonify
-# from flask_cors import CORS
-# from PyPDF2 import PdfReader
-# from langchain_community.document_loaders import PyPDFLoader
-# from langchain.schema.runnable import RunnableLambda
-# from langchain.schema.runnable import RunnableParallel
-# from datetime import datetime
-# from langchain_groq import ChatGroq
-# import google.generativeai as genai
-# import mysql.connector
-
-# import os
-# from dotenv import load_dotenv
-# load_dotenv()
-
-# from langchain.chains import LLMChain
-# from langchain_openai import ChatOpenAI
-# from langchain.prompts import PromptTemplate
-
-# import json
-# import re
-# from pypdf import PdfReader
-# from langchain_groq import ChatGroq
-
-# api_key=os.getenv("GEMINI_API") # Replace with your actual API key
-# gemini = genai.GenerativeModel("gemini-1.5-flash")  # Use Gemini model
-
-# def get_db_connection():
-#     """Returns a new MySQL database connection."""
-#     return mysql.connector.connect(
-#         host="127.0.0.1",
-#         user=os.getenv("DB_USER", "enspirit"),  
-#         password=os.getenv("DB_PASS", "enspirit123"),
-#         database=os.getenv("DB_NAME", "pdfchatbot")  # Ensure this matches your actual DB name
-#     )
-
-# def create_db_and_tables():
-#     try:
-#         # Connect to MySQL server (not yet to a database)
-#         conn = mysql.connector.connect(
-#             host="127.0.0.1",
-#             user="enspirit",
-#             password="enspirit123"
-#         )
-#         cursor = conn.cursor()
-
-#         # Create the database if it doesn't exist
-#         cursor.execute("CREATE DATABASE IF NOT EXISTS pdfchatbot")
-#         cursor.execute("USE pdfchatbot")
-
-#         # Create users table
-#         cursor.execute("""
-#             CREATE TABLE IF NOT EXISTS users (
-#                 user_id VARCHAR(36) PRIMARY KEY,
-#                 user_name VARCHAR(255) UNIQUE NOT NULL
-#             )
-#         """)
-
-#         # Create chathistory table
-#         cursor.execute("""
-#             CREATE TABLE IF NOT EXISTS chathistory (
-#                 chat_id VARCHAR(36) PRIMARY KEY,
-#                 user_id VARCHAR(36),
-#                 user_chat TEXT,
-#                 assistant_chat TEXT,
-#                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-#                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-#             )
-#         """)
-
-#         # Commit and close
-#         conn.commit()
-#         print("PDF chatbot tables created successfully.")
-
-#     except Error as e:
-#         print(f"Error: {e}")
-#     finally:
-#         if cursor:
-#             cursor.close()
-#         if conn and conn.is_connected():
-#             conn.close()
-
-
-
-# # Call the function to create database and tables
-# create_db_and_tables()
-
-# def extract_data_from_pdf(pdf_file):
-#     """Extract all text content from the PDF with consistent formatting."""
-#     try:
-#         pdf_reader = PdfReader(pdf_file)
-#         if not pdf_reader.pages:
-#             return ""
-
-#         raw_content = []
-#         for page in pdf_reader.pages:
-#             text = page.extract_text()
-#             if text:
-#                 raw_content.append(text.strip())
-
-#         if not raw_content:
-#             return ""  # No text found
-
-#         report_content = " ".join(raw_content)  # Combine text from all pages
-#         report_content = re.sub(r"\s+", " ", report_content)  # Normalize spaces
-        
-#         return report_content.strip()
-    
-#     except Exception as e:
-#         print(f"Error extracting text from PDF: {e}")
-
-
 import streamlit as st
 import mysql.connector
 from mysql.connector import Error
@@ -230,13 +105,16 @@ def get_db_connection():
     )
 
 def create_db_and_tables():
+    conn = None
+    cursor = None
     try:
-        # Connect to MySQL server (not yet to a database)
+        # Establish database connection
         conn = mysql.connector.connect(
             host="127.0.0.1",
             user="enspirit",
             password="enspirit123"
         )
+
         cursor = conn.cursor()
 
         # Create the database if it doesn't exist
@@ -246,16 +124,16 @@ def create_db_and_tables():
         # Create users table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
-                user_id VARCHAR(36) PRIMARY KEY,
-                user_name VARCHAR(255) UNIQUE NOT NULL
+                user_id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) NOT NULL UNIQUE
             )
         """)
 
         # Create chathistory table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS chathistory (
-                chat_id VARCHAR(36) PRIMARY KEY,
-                user_id VARCHAR(36),
+                chat_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
                 user_chat TEXT,
                 assistant_chat TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -263,17 +141,18 @@ def create_db_and_tables():
             )
         """)
 
-        # Commit and close
         conn.commit()
-        print("PDF chatbot tables created successfully.")
-
+        print("✅ Database and tables created successfully.")
+    
     except Error as e:
-        print(f"Error: {e}")
+        print(f"❌ Error: {e}")
+
     finally:
         if cursor:
             cursor.close()
         if conn and conn.is_connected():
             conn.close()
+
 
 def logout():
     for key in st.session_state.keys():
